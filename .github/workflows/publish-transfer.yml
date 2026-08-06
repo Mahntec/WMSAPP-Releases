@@ -1,5 +1,23 @@
 name: Publish transferred Android release
 
+# Gegenstück zu `Android release APK` in Mahntec/WMSAPP.
+#
+# Der Quell-Workflow kann hierher nicht schreiben (GITHUB_TOKEN reicht nie über
+# Repository-Grenzen), also läuft die Übergabe über einen kurzlebigen Branch:
+# dort legt er `.release-transfer.json` ab, dieser Workflow bestätigt mit
+# `.release-ready`, bekommt daraufhin eine signierte Artefakt-URL, lädt sie und
+# veröffentlicht.
+#
+# ── Was veröffentlicht wird ─────────────────────────────────────────────────
+#
+#   Tag v<version>   APK, Frontend-Paket, SHA256SUMS   — einmalig, unveränderlich
+#   Tag manifest     manifest.json + .minisig          — bei jedem Release ersetzt
+#   Branch main      dieselben zwei Dateien            — Rückfallquelle der App
+#
+# Der `manifest`-Tag ist der Grund, warum die App überhaupt etwas findet: sie
+# fragt immer dieselbe URL ab. Ein Manifest am Versions-Tag wäre nach dem ersten
+# Release nicht mehr auffindbar.
+
 on:
   push:
     branches:
@@ -16,7 +34,7 @@ concurrency:
 
 jobs:
   publish:
-    name: Publish verified APK
+    name: Publish verified release
     runs-on: ubuntu-latest
     timeout-minutes: 20
 
@@ -24,22 +42,60 @@ jobs:
       - name: Check out transfer
         uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
 
+      # Die Dateinamen stehen im Vertrag, nicht in diesem Workflow. Vorher
+      # suchte dieser Job `WMS-App-<v>.apk`, während drüben
+      # `WMS-App-<v>-arm64-v8a.apk` gebaut wurde — die Übergabe lief durch, das
+      # Veröffentlichen scheiterte, und kein Test konnte das sehen.
       - name: Validate transfer
         shell: bash
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
-          VERSION=$(jq -er '.version' .release-transfer.json)
-          SHA256=$(jq -er '.sha256' .release-transfer.json)
+          T=.release-transfer.json
+
+          SCHEMA=$(jq -r '.schema // 1' "$T")
+          if [[ "$SCHEMA" != "2" ]]; then
+            echo "Übergabe-Schema $SCHEMA, erwartet wird 2." >&2
+            echo "Der Quell-Workflow in Mahntec/WMSAPP ist älter als dieser hier." >&2
+            exit 1
+          fi
+
+          VERSION=$(jq -er '.version' "$T")
+          SHA256=$(jq -er '.sha256' "$T")
+          APK=$(jq -er '.apk' "$T")
+          BUNDLE=$(jq -r '.bundle // ""' "$T")
+          MANIFEST=$(jq -er '.manifest' "$T")
+          MANIFEST_SIG=$(jq -er '.manifestSig' "$T")
+          CHECKSUMS=$(jq -er '.checksums' "$T")
+
           [[ "$VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]
           [[ "$SHA256" =~ ^[0-9a-f]{64}$ ]]
+
+          # Jeder Name wird gleich in Pfade und in eine Shell gespliced, die ein
+          # Repository-Token hält. Auf harmlose Dateinamen einschränken — kein
+          # Schrägstrich, kein `..`, kein Leerzeichen.
+          for NAME in "$APK" "$MANIFEST" "$MANIFEST_SIG" "$CHECKSUMS" ${BUNDLE:+"$BUNDLE"}; do
+            if [[ ! "$NAME" =~ ^[A-Za-z0-9._-]+$ ]]; then
+              echo "Unerlaubter Dateiname in der Übergabe: '$NAME'" >&2
+              exit 1
+            fi
+          done
+
           if gh release view "v${VERSION}" >/dev/null 2>&1; then
             echo "Release v${VERSION} already exists" >&2
             exit 1
           fi
-          echo "VERSION=$VERSION" >> "$GITHUB_ENV"
-          echo "SHA256=$SHA256" >> "$GITHUB_ENV"
+
+          {
+            echo "VERSION=$VERSION"
+            echo "SHA256=$SHA256"
+            echo "APK=$APK"
+            echo "BUNDLE=$BUNDLE"
+            echo "MANIFEST=$MANIFEST"
+            echo "MANIFEST_SIG=$MANIFEST_SIG"
+            echo "CHECKSUMS=$CHECKSUMS"
+          } >> "$GITHUB_ENV"
 
       - name: Request artifact URL
         shell: bash
@@ -59,7 +115,7 @@ jobs:
           done
           [[ -s .artifact-url ]]
 
-      - name: Download and verify APK
+      - name: Download and verify the release set
         shell: bash
         run: |
           set -euo pipefail
@@ -74,11 +130,58 @@ jobs:
             --output incoming/artifact.zip "$ARTIFACT_URL"
           unzip -q incoming/artifact.zip -d incoming/files
 
-          APK="incoming/files/WMS-App-${VERSION}.apk"
-          CHECKSUMS="incoming/files/SHA256SUMS"
-          [[ -f "$APK" && -f "$CHECKSUMS" ]]
+          cd incoming/files
+          for NAME in "$APK" "$MANIFEST" "$MANIFEST_SIG" "$CHECKSUMS" ${BUNDLE:+"$BUNDLE"}; do
+            if [[ ! -f "$NAME" ]]; then
+              echo "Übergabe nennt '$NAME', das Artefakt enthält es nicht:" >&2
+              ls -la >&2
+              exit 1
+            fi
+          done
+
+          # Das APK gegen die Prüfsumme aus der Übergabe.
           [[ "$(sha256sum "$APK" | cut -d ' ' -f 1)" == "$SHA256" ]]
-          grep -Fx "${SHA256}  WMS-App-${VERSION}.apk" "$CHECKSUMS"
+
+          # Und jedes Asset gegen SHA256SUMS. `sha256sum -c` prüft die Datei
+          # gegen sich selbst — das ist die Kontrolle, die eine unterwegs
+          # veränderte Datei findet.
+          sha256sum -c "$CHECKSUMS"
+
+          # SHA256SUMS muss alles abdecken, was gleich veröffentlicht wird.
+          # Eine Liste, die die Hälfte abdeckt, sieht vollständig aus.
+          LISTED=$(sed 's/^[0-9a-f]\{64\} [ *]//' "$CHECKSUMS")
+          for NAME in "$APK" ${BUNDLE:+"$BUNDLE"}; do
+            if ! grep -qxF "$NAME" <<<"$LISTED"; then
+              echo "$CHECKSUMS deckt '$NAME' nicht ab" >&2
+              exit 1
+            fi
+          done
+
+          # Das Manifest muss von dieser Version sprechen und auf diesen Tag
+          # zeigen. Ein Manifest mit falschem Tag erscheint sauber und liefert
+          # danach auf jedem Gerät 404.
+          node -e '
+            const fs = require("node:fs");
+            const m = JSON.parse(fs.readFileSync(process.argv[1], "utf8"));
+            const [version, tag] = process.argv.slice(2);
+            if (m.native?.version !== version) {
+              console.error(`Manifest ist für ${m.native?.version}, übergeben wurde ${version}`);
+              process.exit(1);
+            }
+            for (const [what, url] of [
+              ["native artifact", m.native?.artifacts?.[0]?.url],
+              ...(m.bundle?.id ? [["bundle", m.bundle.url]] : []),
+            ]) {
+              if (!url || !url.includes(`/releases/download/${tag}/`)) {
+                console.error(`Die ${what}-URL zeigt nicht auf ${tag}: ${url}`);
+                process.exit(1);
+              }
+            }
+            if (!m.native?.artifacts?.[0]?.signature) {
+              console.error("Manifest trägt keine Signatur — jedes Gerät würde es verwerfen");
+              process.exit(1);
+            }
+          ' "$MANIFEST" "$VERSION" "v${VERSION}"
 
       - name: Publish release
         shell: bash
@@ -91,7 +194,7 @@ jobs:
 
           ### Installation
 
-          1. Unter **Assets** auf **WMS-App-${VERSION}.apk** tippen.
+          1. Unter **Assets** auf **${APK}** tippen.
           2. Die heruntergeladene APK öffnen und die Installation bestätigen.
 
           - **Update von 1.0.25 oder neuer:** direkt über die vorhandene App installieren.
@@ -113,11 +216,64 @@ jobs:
             gh release delete "v${VERSION}" --yes --cleanup-tag || true
           }
           trap cleanup_draft ERR
-          gh release upload "v${VERSION}" \
-            "incoming/files/WMS-App-${VERSION}.apk#WMS App ${VERSION} (APK)" \
-            "incoming/files/SHA256SUMS#SHA-256 checksums"
+
+          ASSETS=(
+            "incoming/files/${APK}#WMS App ${VERSION} (APK)"
+            "incoming/files/${CHECKSUMS}#SHA-256 checksums"
+          )
+          if [[ -n "$BUNDLE" ]]; then
+            ASSETS+=("incoming/files/${BUNDLE}#Frontend-Paket")
+          fi
+          gh release upload "v${VERSION}" "${ASSETS[@]}"
           gh release edit "v${VERSION}" --draft=false --latest
           trap - ERR
+
+      # Ohne diesen Schritt findet die App gar nichts. Sie fragt einen festen
+      # Tag ab, dessen Assets bei jedem Release ersetzt werden — nicht den
+      # Versions-Tag, der ihr unbekannt ist.
+      - name: Refresh the manifest tag
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          if ! gh release view manifest >/dev/null 2>&1; then
+            gh release create manifest \
+              --target main \
+              --title "Update-Manifest" \
+              --notes "Automatisch gepflegt. Nicht manuell bearbeiten. Zeigt immer auf das jüngste Release."
+          fi
+          # --clobber ist der Sinn dieses Schritts: dieselbe URL, neuer Inhalt.
+          gh release upload manifest --clobber \
+            "incoming/files/${MANIFEST}" \
+            "incoming/files/${MANIFEST_SIG}"
+
+      # Zweite, unabhängige Quelle. Die App weicht auf raw.githubusercontent.com
+      # aus, wenn das Release-Asset nicht erreichbar ist. Bisher schrieb diese
+      # Kopie niemand — die „zwei unabhängige URLs"-Redundanz war erfunden: der
+      # Rückfall lieferte entweder 404 oder für immer ein veraltetes, gültig
+      # signiertes Manifest. Das ist schlimmer als kein Rückfall, weil es
+      # funktioniert aussieht.
+      #
+      # Die Bytes gehen unverändert durch. Das Manifest neu zu erzeugen würde
+      # die Bytefolge ändern, die die Signatur abdeckt, und jedes Gerät würde
+      # den Rückfall als signature-invalid verwerfen.
+      - name: Update the raw fallback copies
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          for NAME in "$MANIFEST" "$MANIFEST_SIG"; do
+            SHA=$(gh api "repos/${GITHUB_REPOSITORY}/contents/${NAME}" --jq '.sha' 2>/dev/null || true)
+            gh api "repos/${GITHUB_REPOSITORY}/contents/${NAME}" \
+              --method PUT \
+              -f message="Update-Manifest ${VERSION}" \
+              -f content="$(base64 -w0 "incoming/files/${NAME}")" \
+              -f branch=main \
+              ${SHA:+-f sha="$SHA"} >/dev/null
+            echo "  $NAME aktualisiert"
+          done
 
       - name: Confirm transfer
         shell: bash
