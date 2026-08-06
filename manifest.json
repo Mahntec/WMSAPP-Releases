@@ -1,0 +1,45 @@
+{
+  "schema": 1,
+  "channel": "stable",
+  "generatedAt": "2026-08-06T23:54:03Z",
+  "native": {
+    "version": "1.0.29",
+    "versionCode": 1000029,
+    "enforcement": "notify",
+    "blockAfter": "",
+    "graceLaunches": 0,
+    "releaseNotes": "",
+    "apkCertSha256": "f773f5335c66b8d2f0a6baa244b1b9c4440f610bb842849387cb7415b55c6b29",
+    "artifacts": [
+      {
+        "abi": "arm64-v8a",
+        "minSdk": 24,
+        "url": "https://github.com/Mahntec/WMSAPP-Releases/releases/download/v1.0.29/WMS-App-1.0.29-arm64-v8a.apk",
+        "size": 13983562,
+        "sha256": "ff140f607dd0395881048373acd93beb20c3ce716f999a9a2d86e295fd0fe0c3",
+        "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVUdW9OL1dkS21pdmdoVllHQW9YT0FxM1FrbkRHaHVaRCtUL0ZXUVpQR1JmTlFrMjRoaEdubWREcXh6cHZjTERmT2lOZWg1c2U2YkhhUEs1OUZ3VWFtbVh4Y2wyVnloZXdFPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzg2MDYwNDY5CWZpbGU6V01TLUFwcC0xLjAuMjktYXJtNjQtdjhhLmFwawoxdm8xT1pJUVBobnZoN05oZHdZQWFQWFB6QUpESnlvc1I1RW5XNDlQUkQwOG1jYSsySEtUTnlVNERIVndmc1lMSTJLN3VTWjVTdHZHVDBNcGpsd3RDZz09Cg==",
+        "keyId": "OTA-2026-01"
+      }
+    ]
+  },
+  "revoked": {
+    "bundleIds": [],
+    "nativeVersions": []
+  },
+  "bundle": {
+    "id": "1.0.29-20260806235402",
+    "appVersion": "1.0.29",
+    "buildTimestamp": 1786060442,
+    "requiresNative": {
+      "min": "",
+      "max": ""
+    },
+    "url": "https://github.com/Mahntec/WMSAPP-Releases/releases/download/v1.0.29/bundle-1.0.29.pack.gz",
+    "sizeGz": 3424796,
+    "sizeRaw": 10882050,
+    "sha256": "cebeb127469a7cbc402de63714aadc47bb98b4df578bc7475d2831facd4e5d99",
+    "sha256Gz": "c899239462064ee86c67eb38741731e937094723d1dd3d1721c64b143ad42e7d",
+    "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVUdW9OL1dkS21pdm41NlIzNjMyY1Y4eWFwcXEwaEdUSzFIaWNFMktLR2lyZG92MkNxSzZTM3V3YXpOekRtS1g3UWU5VGduRzk0c2wzUk4yVlRvd1VVK1dKWUNrYUlCcVFBPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzg2MDYwNDcwCWZpbGU6YnVuZGxlLTEuMC4yOS5wYWNrCmFwNE9iWDhuNng5b3J2dXBWMkUxNGJlV1JDc3BiTmRQaEVHTE8va2J0UG1xRCs5WGZEeUk4b0xRVXZZVlk3TWgzdWNLOTU3RFNhYTdzWnRVVjZod0RnPT0K",
+    "keyId": "OTA-2026-01"
+  }
+}
