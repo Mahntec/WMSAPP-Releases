@@ -1,0 +1,129 @@
+name: Publish transferred Android release
+
+on:
+  push:
+    branches:
+      - "release-transfer/**"
+    paths:
+      - .release-transfer.json
+
+permissions:
+  contents: write
+
+concurrency:
+  group: public-android-release
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    name: Publish verified APK
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - name: Check out transfer
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+
+      - name: Validate transfer
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          VERSION=$(jq -er '.version' .release-transfer.json)
+          SHA256=$(jq -er '.sha256' .release-transfer.json)
+          [[ "$VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]
+          [[ "$SHA256" =~ ^[0-9a-f]{64}$ ]]
+          if gh release view "v${VERSION}" >/dev/null 2>&1; then
+            echo "Release v${VERSION} already exists" >&2
+            exit 1
+          fi
+          echo "VERSION=$VERSION" >> "$GITHUB_ENV"
+          echo "SHA256=$SHA256" >> "$GITHUB_ENV"
+
+      - name: Request artifact URL
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          touch .release-ready
+          git add .release-ready
+          git commit -m "Acknowledge release transfer [skip ci]"
+          git push
+
+          for _ in $(seq 1 180); do
+            git pull --ff-only
+            [[ -s .artifact-url ]] && break
+            sleep 2
+          done
+          [[ -s .artifact-url ]]
+
+      - name: Download and verify APK
+        shell: bash
+        run: |
+          set -euo pipefail
+          ARTIFACT_URL=$(<.artifact-url)
+          case "$ARTIFACT_URL" in
+            https://*.blob.core.windows.net/*) ;;
+            *) echo "Unexpected artifact URL" >&2; exit 1 ;;
+          esac
+
+          mkdir incoming
+          curl --fail --location --retry 3 --max-time 600 \
+            --output incoming/artifact.zip "$ARTIFACT_URL"
+          unzip -q incoming/artifact.zip -d incoming/files
+
+          APK="incoming/files/WMS-App-${VERSION}.apk"
+          CHECKSUMS="incoming/files/SHA256SUMS"
+          [[ -f "$APK" && -f "$CHECKSUMS" ]]
+          [[ "$(sha256sum "$APK" | cut -d ' ' -f 1)" == "$SHA256" ]]
+          grep -Fx "${SHA256}  WMS-App-${VERSION}.apk" "$CHECKSUMS"
+
+      - name: Publish release
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -eEuo pipefail
+          cat > incoming/RELEASE_NOTES.md <<EOF
+          ## WMS App ${VERSION}
+
+          ### Installation
+
+          1. Unter **Assets** auf **WMS-App-${VERSION}.apk** tippen.
+          2. Die heruntergeladene APK öffnen und die Installation bestätigen.
+
+          - **Update von 1.0.25 oder neuer:** direkt über die vorhandene App installieren.
+          - **Version 1.0.24 oder älter:** wegen des neuen Signaturschlüssels einmalig deinstallieren. Vorher sicherstellen, dass keine Offline-Buchungen oder aktiven Picks offen sind.
+
+          - Paket: \`io.otterorbit.wms\`
+          - Version: \`${VERSION}\`
+          - SHA-256: \`${SHA256}\`
+
+          Die APK wurde signiert und gegen das fest hinterlegte Release-Zertifikat geprüft.
+          EOF
+
+          gh release create "v${VERSION}" \
+            --target main \
+            --title "WMS App ${VERSION}" \
+            --notes-file incoming/RELEASE_NOTES.md \
+            --draft
+          cleanup_draft() {
+            gh release delete "v${VERSION}" --yes --cleanup-tag || true
+          }
+          trap cleanup_draft ERR
+          gh release upload "v${VERSION}" \
+            "incoming/files/WMS-App-${VERSION}.apk#WMS App ${VERSION} (APK)" \
+            "incoming/files/SHA256SUMS#SHA-256 checksums"
+          gh release edit "v${VERSION}" --draft=false --latest
+          trap - ERR
+
+      - name: Confirm transfer
+        shell: bash
+        run: |
+          set -euo pipefail
+          touch .release-complete
+          git add .release-complete
+          git commit -m "Complete release transfer [skip ci]"
+          git push
