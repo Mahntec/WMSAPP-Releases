@@ -95,9 +95,21 @@ jobs:
             fi
           done
 
+          # Die Erwartung ist je Modus die umgekehrte:
+          #   full  v<version> darf es NICHT geben, es wird gleich angelegt
+          #   ota   v<version> MUSS es geben, dort haengt das APK, gegen das
+          #         das Paket gebaut wurde und auf das seine URL zeigt
           if gh release view "v${VERSION}" >/dev/null 2>&1; then
-            echo "Release v${VERSION} already exists" >&2
-            exit 1
+            if [[ "$MODE" == "full" ]]; then
+              echo "Release v${VERSION} already exists" >&2
+              exit 1
+            fi
+          else
+            if [[ "$MODE" == "ota" ]]; then
+              echo "Release v${VERSION} existiert nicht." >&2
+              echo "Ein Frontend-Paket braucht das APK, gegen das es gebaut wurde." >&2
+              exit 1
+            fi
           fi
 
           {
