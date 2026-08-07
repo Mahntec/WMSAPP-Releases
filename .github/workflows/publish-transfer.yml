@@ -55,27 +55,40 @@ jobs:
           T=.release-transfer.json
 
           SCHEMA=$(jq -r '.schema // 1' "$T")
-          if [[ "$SCHEMA" != "2" ]]; then
-            echo "Übergabe-Schema $SCHEMA, erwartet wird 2." >&2
+          if [[ "$SCHEMA" != "3" ]]; then
+            echo "Übergabe-Schema $SCHEMA, erwartet wird 3." >&2
             echo "Der Quell-Workflow in Mahntec/WMSAPP ist älter als dieser hier." >&2
             exit 1
           fi
 
+          # Zwei Wege, ein Gegenstück:
+          #   full  neues APK -> Release v<version> anlegen
+          #   ota   nur ein Frontend-Paket -> KEIN Release, das APK ist
+          #         unverändert und liegt bereits an v<version>
+          MODE=$(jq -er '.mode' "$T")
+          case "$MODE" in
+            full|ota) ;;
+            *) echo "Unbekannter Übergabe-Modus: '$MODE'" >&2; exit 1 ;;
+          esac
+
           VERSION=$(jq -er '.version' "$T")
-          SHA256=$(jq -er '.sha256' "$T")
-          APK=$(jq -er '.apk' "$T")
+          SHA256=$(jq -r '.sha256 // ""' "$T")
+          APK=$(jq -r '.apk // ""' "$T")
           BUNDLE=$(jq -r '.bundle // ""' "$T")
           MANIFEST=$(jq -er '.manifest' "$T")
           MANIFEST_SIG=$(jq -er '.manifestSig' "$T")
           CHECKSUMS=$(jq -er '.checksums' "$T")
 
           [[ "$VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]
-          [[ "$SHA256" =~ ^[0-9a-f]{64}$ ]]
+          if [[ "$MODE" == "full" ]]; then
+            [[ "$SHA256" =~ ^[0-9a-f]{64}$ ]]
+            [[ -n "$APK" ]]
+          fi
 
           # Jeder Name wird gleich in Pfade und in eine Shell gespliced, die ein
           # Repository-Token hält. Auf harmlose Dateinamen einschränken — kein
           # Schrägstrich, kein `..`, kein Leerzeichen.
-          for NAME in "$APK" "$MANIFEST" "$MANIFEST_SIG" "$CHECKSUMS" ${BUNDLE:+"$BUNDLE"}; do
+          for NAME in ${APK:+"$APK"} "$MANIFEST" "$MANIFEST_SIG" "$CHECKSUMS" ${BUNDLE:+"$BUNDLE"}; do
             if [[ ! "$NAME" =~ ^[A-Za-z0-9._-]+$ ]]; then
               echo "Unerlaubter Dateiname in der Übergabe: '$NAME'" >&2
               exit 1
@@ -88,6 +101,7 @@ jobs:
           fi
 
           {
+            echo "MODE=$MODE"
             echo "VERSION=$VERSION"
             echo "SHA256=$SHA256"
             echo "APK=$APK"
@@ -131,7 +145,7 @@ jobs:
           unzip -q incoming/artifact.zip -d incoming/files
 
           cd incoming/files
-          for NAME in "$APK" "$MANIFEST" "$MANIFEST_SIG" "$CHECKSUMS" ${BUNDLE:+"$BUNDLE"}; do
+          for NAME in ${APK:+"$APK"} "$MANIFEST" "$MANIFEST_SIG" "$CHECKSUMS" ${BUNDLE:+"$BUNDLE"}; do
             if [[ ! -f "$NAME" ]]; then
               echo "Übergabe nennt '$NAME', das Artefakt enthält es nicht:" >&2
               ls -la >&2
@@ -139,8 +153,11 @@ jobs:
             fi
           done
 
-          # Das APK gegen die Prüfsumme aus der Übergabe.
-          [[ "$(sha256sum "$APK" | cut -d ' ' -f 1)" == "$SHA256" ]]
+          # Das APK gegen die Pruefsumme aus der Uebergabe. Im OTA-Modus gibt es
+          # keines: das APK ist unveraendert und liegt bereits am Versions-Tag.
+          if [[ "$MODE" == "full" ]]; then
+            [[ "$(sha256sum "$APK" | cut -d ' ' -f 1)" == "$SHA256" ]]
+          fi
 
           # Und jedes Asset gegen SHA256SUMS. `sha256sum -c` prüft die Datei
           # gegen sich selbst — das ist die Kontrolle, die eine unterwegs
@@ -150,7 +167,7 @@ jobs:
           # SHA256SUMS muss alles abdecken, was gleich veröffentlicht wird.
           # Eine Liste, die die Hälfte abdeckt, sieht vollständig aus.
           LISTED=$(sed 's/^[0-9a-f]\{64\} [ *]//' "$CHECKSUMS")
-          for NAME in "$APK" ${BUNDLE:+"$BUNDLE"}; do
+          for NAME in ${APK:+"$APK"} ${BUNDLE:+"$BUNDLE"}; do
             if ! grep -qxF "$NAME" <<<"$LISTED"; then
               echo "$CHECKSUMS deckt '$NAME' nicht ab" >&2
               exit 1
@@ -184,6 +201,7 @@ jobs:
           ' "$MANIFEST" "$VERSION" "v${VERSION}"
 
       - name: Publish release
+        if: env.MODE == 'full'
         shell: bash
         env:
           GH_TOKEN: ${{ github.token }}
@@ -231,6 +249,27 @@ jobs:
       # Ohne diesen Schritt findet die App gar nichts. Sie fragt einen festen
       # Tag ab, dessen Assets bei jedem Release ersetzt werden — nicht den
       # Versions-Tag, der ihr unbekannt ist.
+      # Im OTA-Modus entsteht kein Release: das APK ist unveraendert. Das
+      # Paket gehoert an den Versions-Tag, gegen den es gebaut wurde — dort
+      # zeigt auch die URL im signierten Manifest hin.
+      - name: Attach the bundle to the existing release
+        if: env.MODE == 'ota'
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          if ! gh release view "v${VERSION}" >/dev/null 2>&1; then
+            echo "Release v${VERSION} existiert nicht. Ein Frontend-Paket" >&2
+            echo "braucht das APK, gegen das es gebaut wurde." >&2
+            exit 1
+          fi
+          ASSETS=(
+            "incoming/files/${BUNDLE}#Frontend-Paket ${BUNDLE}"
+            "incoming/files/${CHECKSUMS}#SHA-256 checksums"
+          )
+          gh release upload "v${VERSION}" "${ASSETS[@]}" --clobber
+
       - name: Refresh the manifest tag
         shell: bash
         env:
