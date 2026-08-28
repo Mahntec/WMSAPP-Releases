@@ -1,7 +1,7 @@
 {
   "schema": 1,
   "channel": "stable",
-  "generatedAt": "2026-08-28T09:46:15Z",
+  "generatedAt": "2026-08-28T10:06:43Z",
   "native": {
     "version": "1.1.2",
     "versionCode": 1001002,
@@ -17,7 +17,7 @@
         "url": "https://github.com/Mahntec/WMSAPP-Releases/releases/download/v1.1.2/WMS-App-1.1.2-arm64-v8a.apk",
         "size": 13993254,
         "sha256": "aede263fd0f51ffe294cf44428660cce857ffdb65fbcddb227643f07d9b193d2",
-        "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVUdW9OL1dkS21pdnFzNDR0c0c0aVp3c3Z4QXlWNFFrcUZHb3hrTy9vQ3BDNXl6cWE1US9lU3dQYXBPNHZSeFNSb0JoaHNQR014Zk5qSVQ2SVEwK1JOWEFtWERhdUpjcGdFPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzg3OTEwMzc2CWZpbGU6V01TLUFwcC0xLjEuMi1hcm02NC12OGEuYXBrClJQYkpnSzNjcEp5eWZNWXk2Z0FKOWVWNVZoaFlMS3QxNWlvdm5JTkNyKzdtekZVQitSYXgvSUxBZENONHNCN1NWSUFXQzV2VlkxV1hyeEE1b3ZEQUFBPT0K",
+        "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVUdW9OL1dkS21pdnF4aDN2OE5IZmdjNWE1ejdoQmV5T3pIQ29FMXZiZEcrTno5Z0EremRCNTBuMk95ajJMNVlEb3NneFZtYVFDajBSZm1wcXdKcGxSK1NDMHlSRCszVEFnPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzg3OTExNjA0CWZpbGU6V01TLUFwcC0xLjEuMi1hcm02NC12OGEuYXBrCmgwV1ZBZXJtK1E1Y3pUTmZIQmlVNnd3ODhxSzVaVzE4YmJXZnFmSlEySDFVUTQrdjVYbHBmcmxRMVJhZG5zVS9kTlMyNGtiSUVGSTFiWExLNi8rT0NBPT0K",
         "keyId": "OTA-2026-01"
       }
     ]
@@ -27,19 +27,19 @@
     "nativeVersions": []
   },
   "bundle": {
-    "id": "1.1.2-20260828094614",
+    "id": "1.1.2-20260828100643",
     "appVersion": "1.1.2",
-    "buildTimestamp": 1787910374,
+    "buildTimestamp": 1787911603,
     "requiresNative": {
       "min": "1.1.2",
       "max": ""
     },
-    "url": "https://github.com/Mahntec/WMSAPP-Releases/releases/download/v1.1.2/bundle-1.1.2-20260828094614.pack.gz",
-    "sizeGz": 3439322,
+    "url": "https://github.com/Mahntec/WMSAPP-Releases/releases/download/v1.1.2/bundle-1.1.2-20260828100643.pack.gz",
+    "sizeGz": 3439321,
     "sizeRaw": 10923331,
-    "sha256": "91d9ef01385b7ca43cebe628e5eab26759017842857bfd3748c864711fd4f0a0",
-    "sha256Gz": "20aaa05ef701a7ba768afacf389912739fa483dec951050a41105acf2daf50e8",
-    "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVUdW9OL1dkS21pdnEvUGJSMi8yQklCSWFmTHJJUWQxem9Gc3dYOGlwUjgzeDNqakh6STBmdi9ZMzhDSmpodm83S05FKzFGVTllUTB6dm1qdHBDdXlBbGRVOXlYZnRjVmdzPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzg3OTEwMzc3CWZpbGU6YnVuZGxlLTEuMS4yLTIwMjYwODI4MDk0NjE0LnBhY2sKVXdDTzlLemtLYS9pdDg0cXBhMlQ1K2YxOXZiOWQ1dGNsajhZYjRLVlRQMUNUVGJETFhJYWdKUi9tSFpaSTZUSDEzdFpaYjQ3bEFvcjVsa0g3RWZiREE9PQo=",
+    "sha256": "8d61286a09503d4a5a17670d73522cfabdc624b315a10b10453511cf96a91af7",
+    "sha256Gz": "f0dd778461c8c282d9fe78578a4aa73743aef5cc3051145abaf61684ba507959",
+    "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVUdW9OL1dkS21pdnFnKzBabW5SSXMrenBOL0tKd2oxUERCczNKemxNeWE5K3lsTXE2c1lDUXEzMTNlUisrazRGTlNOK1R1em1vUVE5eE9nWVFaZDE3eHkyYzNSNE8za2c0PQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzg3OTExNjA1CWZpbGU6YnVuZGxlLTEuMS4yLTIwMjYwODI4MTAwNjQzLnBhY2sKT3FJSjRhRnA4REJSMmFVTmJYTWtNeUNhTlpWa2xsbnpPU2dxSTdjZ1cvN2lWL1BERDc2SEoxZGJGOVBrODcwWDBSeklxRnM1THhrb1l0dngzMmRQRFE9PQo=",
     "keyId": "OTA-2026-01"
   }
 }
