@@ -1,7 +1,7 @@
 {
   "schema": 1,
   "channel": "stable",
-  "generatedAt": "2026-10-02T08:33:05Z",
+  "generatedAt": "2026-10-03T12:06:20Z",
   "native": {
     "version": "1.1.2",
     "versionCode": 1001002,
@@ -17,7 +17,7 @@
         "url": "https://github.com/Mahntec/WMSAPP-Releases/releases/download/v1.1.2/WMS-App-1.1.2-arm64-v8a.apk",
         "size": 13993254,
         "sha256": "aede263fd0f51ffe294cf44428660cce857ffdb65fbcddb227643f07d9b193d2",
-        "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVUdW9OL1dkS21pdnZjL2JrSVl0N0MwYVdDYzAxTUVST0E4andFSGx6TVYxMEJNeEhZK0JKWkcvRTZneXhBMEZUSnZtTnRUeWUrMlJ1MHFiTDNCYnRIZmtNWUJNMldrdHdZPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzkwOTI5OTg1CWZpbGU6V01TLUFwcC0xLjEuMi1hcm02NC12OGEuYXBrCmEySzhRQ2l5b1VFZ3AxaWdzajk2TlFqTDlMbFM5U1h4dUQ5Rm1oeDJaNzY0N0M1aEhIaUJQQ3lYdFVBL3VJUE5CWkxBZE5KbGMyYUxEVG5PK2ZIaUFRPT0K",
+        "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVUdW9OL1dkS21pdmdRa0NvalRPbXNWcjJRVGkxdzBNV0U2WjFyWUtkZ1FVWjVEUEhWalllZ3l0eVNKZG5sVmxIZU9KOHIybWRub1Bpa0IweEZlck1SbVNTVDYzOUp6QlFjPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzkxMDI5MTgxCWZpbGU6V01TLUFwcC0xLjEuMi1hcm02NC12OGEuYXBrCnFFY2N6b1VvRVNKbG5WMXVNbVM3ZkZHbGxUaFEzZ1B2UjI1czlHc2JEa0tZQm9WWDRUY0pTdnlQM1I1ZHI4dk1Ib3kzbG52NkhVZStUclFWZFZaYUR3PT0K",
         "keyId": "OTA-2026-01"
       }
     ]
@@ -27,19 +27,19 @@
     "nativeVersions": []
   },
   "bundle": {
-    "id": "1.1.2-20261002083304",
+    "id": "1.1.2-20261003120620",
     "appVersion": "1.1.2",
-    "buildTimestamp": 1790929984,
+    "buildTimestamp": 1791029180,
     "requiresNative": {
       "min": "1.1.2",
       "max": ""
     },
-    "url": "https://github.com/Mahntec/WMSAPP-Releases/releases/download/v1.1.2/bundle-1.1.2-20261002083304.pack.gz",
-    "sizeGz": 3456115,
-    "sizeRaw": 10974923,
-    "sha256": "34211138606d186b75fd9f8359809f811665974473f9099643517e5e1934469d",
-    "sha256Gz": "1fdb5e7ef445abe9ed68fb23c064f5e37211be15ab3d6bfafed8fc5db9a2ebca",
-    "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVUdW9OL1dkS21pdnFHTGhVMlkrUkZlTm5vZTJqbFhqZHd5RGwvVWxlKzlNd2tYaXJjSWlhckFoZWw4MU5oemlXbGd2T29kN0ZlUlNvcG5BVEllb0VmTGFRZFRMR3JCNHc4PQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzkwOTI5OTg2CWZpbGU6YnVuZGxlLTEuMS4yLTIwMjYxMDAyMDgzMzA0LnBhY2sKVmNTVVJRVTVadzRIbXQra1V0NlhGV3MwSkl3YXo2RTRsdytOc3pSVUladUZpaXRUQU5LM25oU3FrOUJQMlZYdmUwL2N0eHZ2eTZrcjNmeFc0cTUwQnc9PQo=",
+    "url": "https://github.com/Mahntec/WMSAPP-Releases/releases/download/v1.1.2/bundle-1.1.2-20261003120620.pack.gz",
+    "sizeGz": 3457127,
+    "sizeRaw": 10979158,
+    "sha256": "497924c9ee8e5538dfb1d2baf819db2acc0ec750e9cd6107709cf5855e0acbdb",
+    "sha256Gz": "7d033687e152efecb23188018362aa631406a447d396ad2bec2d82fbc888012f",
+    "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVUdW9OL1dkS21pdnRLb2M5ekp6aUJBYXJaUUtUcGVsY2pYMTVkci9wQnM1Y1ZjNmVwSHF6dmlkd3RCaExYTERDcTV4WmVDQ3RtUnFuRld6Y1dZblhacXVFSGJGczZMNlFJPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzkxMDI5MTgxCWZpbGU6YnVuZGxlLTEuMS4yLTIwMjYxMDAzMTIwNjIwLnBhY2sKd0NhemxaOXNmaGg1THVVeG9EUXk2eDB3b1ZadjZ0czRYWGplSXc2VHpkTDdpV1VoTkx1YWFqRWxEcVQyU1NIQkJPK3ZTOWplcGhUZmxaTUpibTRwQVE9PQo=",
     "keyId": "OTA-2026-01"
   }
 }
